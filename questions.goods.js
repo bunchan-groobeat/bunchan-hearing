@@ -1,0 +1,72 @@
+/*
+ * はんこ屋ぶんちゃん ヒアリングシート — 質問セット「グッズ・ノベルティ」v1（第3便・§3-12）
+ * 共通型（データ分岐・NG・C・宣言）。品目に「その他（新商品の受け皿）」。宣言は本番文面（2026-07-20 社長確定）。
+ */
+(function () {
+  'use strict';
+  var Q = [
+    { id: 'D1', round: 'ご相談内容', sum: '品目', title: 'どのグッズですか？',
+      options: [
+        { label: 'ライター', val: 'std' },
+        { label: 'マグカップ', val: 'std' },
+        { label: '缶バッジ', val: 'std' },
+        { label: 'ネームプレート', val: 'std' },
+        { label: 'タンブラー', val: 'std' },
+        { label: 'キーホルダー', val: 'std' },
+        { label: 'その他（相談したい）', val: 'other' },
+      ] },
+    { id: 'D2', round: 'ご相談内容', sum: '品目（その他）', type: 'text',
+      title: 'どんなグッズか教えてください', placeholder: '例）モバイルバッテリー、トートバッグ など',
+      showIf: function (a) { return a.D1 && a.D1.val === 'other'; } },
+
+    { id: 'D3', round: 'ご相談内容', sum: 'ご依頼区分', title: 'ご依頼の種類は？',
+      options: [
+        { label: '新しくデザインする', val: 'new' },
+        { label: '仕上がりデータを持っている（入稿）', val: 'data' },
+        { label: '前回と同じ・リピート', val: 'repeat' },
+      ] },
+    { id: 'D4', round: 'デザイン', sum: '避けたいこと', type: 'text', optional: true, showIf: isNew,
+      title: 'これだけは避けたい、はありますか？（任意）', placeholder: '任意' },
+    { id: 'D5', round: 'データ入稿', type: 'note', showIf: isData,
+      title: '仕上がりデータの送付', body: 'データ（ai / PDF / 画像など）は、受付後にLINE・メールでお送りください。' },
+    { id: 'D6', round: 'リピート', sum: 'リピート内容', showIf: isRepeat,
+      title: '前回からの変更は？',
+      options: [{ label: '前回とまったく同じ', val: 'same' }, { label: '一部変更あり', val: 'change' }] },
+    { id: 'D7', round: 'リピート', sum: '変更点', type: 'text', multiline: true, title: '変更したい点', placeholder: '例）数量だけ変更 など',
+      showIf: function (a) { return isRepeat(a) && a.D6 && a.D6.val === 'change'; } },
+
+    { id: 'D8', round: '仕様', sum: '入れる内容', title: '入れる内容',
+      options: [
+        { label: 'ロゴ' },
+        { label: '文字' },
+        { label: 'ロゴ＋文字' },
+        { label: '相談したい' },
+      ] },
+    { id: 'D9', round: '仕様', sum: '個別名入れ', title: '個別の名入れは？', note: '詳細（名前リスト等）は受付後に承ります。',
+      options: [{ label: 'なし' }, { label: 'あり' }] },
+    { id: 'D10', round: '仕様', sum: 'サイズ', type: 'text', optional: true, title: 'サイズ（わかる範囲でOK・任意）', placeholder: 'わからなければ空欄でOK' },
+    { id: 'D11', round: '仕様', sum: '数量', type: 'text', title: '数量', placeholder: '例）100個', inputmode: 'numeric' },
+    { id: 'D12', round: '仕様', sum: '色・仕様の希望', type: 'text', optional: true, title: '色・仕様の希望（任意）', placeholder: '例）本体は白、印刷は1色 など' },
+    { id: 'D13', round: '納期', sum: '納期', title: 'お急ぎ度',
+      options: [{ label: '特急（できるだけ早く）' }, { label: '通常' }, { label: 'ゆっくりでOK' }] },
+    { id: 'D14', round: '納期', sum: '使用日', type: 'text', optional: true, title: '使う予定日があれば（任意）', placeholder: '例）8/10のイベントで配布' },
+
+    { id: 'D15', round: 'お客様情報', sum: 'お客様のお名前', type: 'text', title: 'ご記入者のお名前', placeholder: 'ご記入ください' },
+    { id: 'D16', round: 'お客様情報', sum: '会社名・屋号', type: 'text', optional: true, title: '会社名・屋号（任意）', placeholder: 'あれば' },
+    { id: 'D17', round: 'お客様情報', sum: 'ご希望の連絡手段', title: 'ご連絡はどの方法がよいですか？',
+      options: [{ label: '電話' }, { label: 'LINE' }, { label: 'メール' }] },
+    { id: 'D18', round: 'お客様情報', sum: 'ご連絡先', type: 'text', title: 'ご連絡先', placeholder: '電話番号／LINE ID／メールアドレス' },
+    { id: 'D19', round: '素材', type: 'note', title: '素材について', body: 'ロゴやデザインの素材は、受付後にLINE・メールでお送りいただけます。' },
+    { id: 'D20', round: 'ご確認', type: 'confirm', title: '最後にご確認ください',
+      body: [
+        'このフォームの送信はご注文の確定ではありません。内容を確認のうえ、お店からご連絡いたします。',
+        'このシートでは金額は表示されません。サイトに載っている価格は目安で、お見積りは内容を確認してからお出しします。',
+        'いただいた内容を、ご相談の目的以外に使うことはありません。',
+      ], checkLabel: '上記を確認しました' },
+  ];
+  function isNew(a) { return a.D3 && a.D3.val === 'new'; }
+  function isData(a) { return a.D3 && a.D3.val === 'data'; }
+  function isRepeat(a) { return a.D3 && a.D3.val === 'repeat'; }
+  window.HEARING_SETS = window.HEARING_SETS || {};
+  window.HEARING_SETS['goods'] = { meta: { key: 'goods', label: 'グッズ・ノベルティ', title: 'グッズ・ノベルティ ヒアリング' }, questions: Q };
+})();
