@@ -222,6 +222,22 @@
   .confirm__check input { width: 22px; height: 22px; flex-shrink: 0; accent-color: var(--primary); }
   .intake-note { color: var(--muted); font-size: 12.5px; text-align: center; margin: 4px 0 2px; line-height: 1.7; }
 
+  /* ===== v2：目安価格・欄ごと入力・流れ ===== */
+  .opt__hint { display: block; font-size: 12.5px; font-weight: 600; color: var(--primary-deep); margin-top: 2px; }
+  .field--labeled { margin: 12px 0 4px; }
+  .field__label { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 6px; }
+  .field textarea.is-short { min-height: 84px; }
+  .estimate { background: #fffaf3; border: 1.5px solid #f3d9a8; border-radius: var(--radius); padding: 18px 18px 16px; }
+  .estimate__label { font-size: 12.5px; font-weight: 800; color: #9a6a12; letter-spacing: .08em; }
+  .estimate__total { font-size: clamp(24px, 7vw, 30px); font-weight: 800; line-height: 1.35; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+  .estimate__line { font-size: 13.5px; color: var(--ink); line-height: 1.7; }
+  .estimate__note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+  .after-note { background: var(--soft); border: 1px solid #f7cec6; border-radius: 14px; padding: 14px 16px; font-size: 14px; font-weight: 700; color: var(--primary-deep); line-height: 1.7; }
+  .flow { list-style: none; counter-reset: f; display: grid; gap: 6px; }
+  .flow li { counter-increment: f; display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.6; }
+  .flow li::before { content: counter(f); flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--soft); color: var(--primary-deep); font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+  .flow__h { font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
+
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
     .concept p { opacity: 1; transform: none; }
@@ -377,6 +393,7 @@
     function renderQuestion() {
       var q = QS[state.i];
       if (q.type === 'text') { renderText(q); return; }
+      if (q.type === 'fields') { renderFields(q); return; }
       if (q.type === 'note') { renderNote(q); return; }
       if (q.type === 'confirm') { renderConfirm(q); return; }
       clear(app);
@@ -396,6 +413,8 @@
         b.appendChild(el('span', 'opt__num', String(oi + 1)));
         var lab = el('span', 'opt__label');
         lab.appendChild(document.createTextNode(opt.label));
+        var hint = typeof opt.hint === 'function' ? opt.hint(state.answers) : opt.hint;
+        if (hint) lab.appendChild(el('span', 'opt__hint', hint));
         if (opt.quote) {
           var badge = el('span', 'quote-badge', '※別途お見積り');
           lab.appendChild(badge);
@@ -543,6 +562,56 @@
       window.scrollTo(0, 0);
     }
 
+    // ---- 複数欄の入力（印面の会社名・住所・電話などを欄ごとに）----
+    // q.fields=[{key,label,placeholder,multiline,inputmode}]（関数も可）・q.needAny=[key...]（どれか1つ入れば進める）
+    function renderFields(q) {
+      clear(app); app.appendChild(header());
+      var qc = el('div', 'q');
+      qc.appendChild(qbar(q));
+      qc.appendChild(el('div', 'q__eyebrow', roundLabel(q.round)));
+      qc.appendChild(el('h2', 'q__title', q.title));
+      if (q.note) qc.appendChild(el('p', 'q__note', q.note));
+      var prev = state.answers[q.id] || {};
+      var fields = typeof q.fields === 'function' ? q.fields(state.answers) : q.fields;
+      var need = (typeof q.needAny === 'function' ? q.needAny(state.answers) : q.needAny) || [];
+      var inputs = {};
+      fields.forEach(function (f) {
+        var box = el('div', 'field field--labeled');
+        var lab = el('label', 'field__label', f.label + (need.indexOf(f.key) >= 0 ? '' : '（任意）'));
+        var input = document.createElement(f.multiline ? 'textarea' : 'input');
+        if (!f.multiline) input.type = 'text'; else input.className = 'is-short';
+        input.id = 'f_' + q.id + '_' + f.key; lab.htmlFor = input.id;
+        input.value = (prev.values && prev.values[f.key]) || '';
+        if (f.placeholder) input.placeholder = f.placeholder;
+        if (f.inputmode) input.setAttribute('inputmode', f.inputmode);
+        box.appendChild(lab); box.appendChild(input);
+        qc.appendChild(box);
+        inputs[f.key] = input;
+      });
+      var mb = el('div', 'multibar');
+      var hint = el('div', 'multibar__hint', '');
+      mb.appendChild(hint);
+      var next = document.createElement('button');
+      next.className = 'btn btn--primary btn--block'; next.type = 'button';
+      next.textContent = isLastVisible(q) ? '入力内容を確認' : '次へ ›';
+      function sync() {
+        var ok = !need.length || need.some(function (k) { return inputs[k] && inputs[k].value.trim(); });
+        next.disabled = !ok;
+        hint.textContent = ok ? '' : (q.needHint || '印面に入れる文字を入力してください');
+      }
+      Object.keys(inputs).forEach(function (k) { inputs[k].addEventListener('input', sync); });
+      sync();
+      next.addEventListener('click', function () {
+        var v = { values: {}, labels: {} };
+        fields.forEach(function (f) { var t = inputs[f.key].value.trim(); if (t) { v.values[f.key] = t; v.labels[f.key] = f.label; } });
+        state.answers[q.id] = v; advance();
+      });
+      mb.appendChild(next);
+      qc.appendChild(mb);
+      app.appendChild(qc);
+      window.scrollTo(0, 0);
+    }
+
     // ---- 案内（入力なし・アップロードの代替導線など）----
     function renderNote(q) {
       clear(app); app.appendChild(header());
@@ -604,11 +673,19 @@
     // ---- 受付内容まとめ（種目別の出力＝スタッフがDenpyo-BOTへ貼る）----
     function buildSummary() {
       var lines = [];
-      lines.push('【' + ((SET.meta && SET.meta.label) || '受付') + '】ヒアリング内容');
+      var meta = SET.meta || {};
+      lines.push('【' + (meta.label || '受付') + (meta.ver ? '・' + meta.ver : '') + '】ヒアリング内容');
       lines.push('');
       QS.forEach(function (q) {
         if (!isVisible(q) || q.type === 'note' || q.type === 'confirm') return;
         var a = state.answers[q.id], val = '';
+        if (q.type === 'fields') {
+          if (!a || !a.values) return;
+          var keys = Object.keys(a.values); if (!keys.length) return;
+          lines.push('■ ' + (q.sum || q.title) + '：');
+          keys.forEach(function (k) { lines.push('　' + a.labels[k] + '：' + a.values[k].replace(/\n/g, ' / ')); });
+          return;
+        }
         if (q.type === 'text') { val = (a || '').trim(); if (!val) return; }
         else if (q.multi) { if (!Array.isArray(a) || !a.length) return; val = a.map(function (o) { return o.label; }).join('・'); }
         else { if (!a) return; val = a.label; }
@@ -616,7 +693,24 @@
       });
       var confirmed = QS.filter(function (q) { return q.type === 'confirm' && isVisible(q) && state.answers[q.id]; });
       if (confirmed.length) { lines.push(''); lines.push('※「ご確認事項」を確認済み'); }
+      var est = getEstimate();
+      if (est) {
+        lines.push('');
+        lines.push('■ 目安金額：' + est.total);
+        (est.lines || []).forEach(function (l) { lines.push('　' + l); });
+      }
       return lines.join('\n');
+    }
+
+    // 種目ごとの目安金額（SET.estimate があるときだけ）。visible(id) で分岐中の設問だけを使わせる
+    function getEstimate() {
+      if (!SET || typeof SET.estimate !== 'function') return null;
+      try {
+        return SET.estimate(state.answers, function (id) {
+          var q = QS.filter(function (x) { return x.id === id; })[0];
+          return !!q && isVisible(q);
+        });
+      } catch (e) { return null; }
     }
 
     // ================= 最終画面 =================
@@ -679,8 +773,30 @@
       var concept = el('div', 'concept');
       text.split(/\n/).forEach(function (line) { concept.appendChild(el('p', null, line || ' ')); });
       r.appendChild(concept);
-      r.appendChild(el('p', 'intake-note',
-        'この内容を確認してご連絡します（送信＝ご注文確定ではありません）。お見積りは内容をもとに担当がご案内します。'));
+
+      var est = getEstimate();
+      if (est) {
+        var eb = el('div', 'estimate');
+        eb.appendChild(el('div', 'estimate__label', '目安の金額'));
+        eb.appendChild(el('div', 'estimate__total', est.total));
+        (est.lines || []).forEach(function (l) { eb.appendChild(el('div', 'estimate__line', l)); });
+        eb.appendChild(el('div', 'estimate__note', est.note || '正式な金額は、内容を確認してお店からお知らせします。'));
+        r.appendChild(eb);
+      }
+      var notes = typeof SET.afterNotes === 'function' ? (SET.afterNotes(state.answers) || []) : [];
+      notes.forEach(function (n) { r.appendChild(el('div', 'after-note', n)); });
+
+      if (Array.isArray(SET.flow) && SET.flow.length) {
+        var fw = el('div');
+        fw.appendChild(el('div', 'flow__h', 'このあとの流れ'));
+        var ol = el('ol', 'flow');
+        SET.flow.forEach(function (s) { ol.appendChild(el('li', null, s)); });
+        fw.appendChild(ol);
+        r.appendChild(fw);
+      } else {
+        r.appendChild(el('p', 'intake-note',
+          'この内容を確認してご連絡します（送信＝ご注文確定ではありません）。お見積りは内容をもとに担当がご案内します。'));
+      }
       r.appendChild(resultActions(text));
       app.appendChild(r);
     }
