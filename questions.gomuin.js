@@ -5,6 +5,10 @@
  *   ② どの選択肢にも目安の売値（税込）を出し、最後に目安金額×個数を出す
  *   ③ 印面の文字を欄ごとに入力（会社名・住所・電話…）。写真で送る道も用意
  *   ④ 最後に「作ってほしい／まず金額／店で相談」を聞く
+ * v2.1（2026-11-18 Fable 5.2の検討＋社長 A=OK・B=やらない・C=お願い）：
+ *   ⑤ 値段が1つに決まる組み合わせは「目安」でなく「お値段」として出す（A）
+ *   ⑥ 文字を先に聞いてから大きさ（入力した行数からおすすめを出す）・四角/丸とロゴを聞く
+ *   ⑦ 個数・納期は選ぶ形に（納期はHPと同じ「午前中のご注文で翌日午後」）
  * 売値の正本＝HQ projects/hanko-bunchan/価格表_ゴム印_v1.md（見積アプリと同じ計算で代表サイズを出した値）。
  * ★ここには売値（税込）だけを書く。原価は絶対に書かない（公開リポジトリ）。
  */
@@ -73,6 +77,23 @@
     var f = form(a); return !(P[u][f] && P[u][f].noOil);
   };
   function isTyped(a) { return a.G12 && a.G12.val === 'type'; }
+  function hasLogo(a) { return use(a) === 'kaku' && a.G4c && a.G4c.val === 'logo'; }
+  // 入力した文字の行数（欄ごと・改行ごとに1行）。写真で送る人は0
+  function typedLines(a) {
+    if (!isTyped(a) || !a.G13 || !a.G13.values) return 0;
+    var n = 0;
+    Object.keys(a.G13.values).forEach(function (k) {
+      n += String(a.G13.values[k]).split(/\n/).filter(function (x) { return x.trim(); }).length;
+    });
+    return n;
+  }
+  function addrRec(a) { var n = typedLines(a); return n === 0 ? -1 : n <= 2 ? 0 : n === 3 ? 1 : 2; }
+  function addrSizeHint(i, base) {
+    return function (a) {
+      var h = (base ? base + '／' : '') + sizeHint('addr', i)(a);
+      return addrRec(a) === i ? 'おすすめ（入力した文字が' + typedLines(a) + '行）／' + h : h;
+    };
+  }
 
   // ---- 印面の欄（使い道ごと）----
   var FIELDS = {
@@ -149,6 +170,19 @@
       ],
     },
     {
+      id: 'G4b', round: '形', sum: '外側の形', showIf: function (a) { return use(a) === 'kaku'; },
+      title: '印面は四角・丸のどちらですか？',
+      options: [{ label: '四角' }, { label: '丸' }, { label: 'おまかせ' }],
+    },
+    {
+      id: 'G4c', round: '形', sum: 'ロゴ・絵', showIf: function (a) { return use(a) === 'kaku'; },
+      title: 'ロゴや絵は入れますか？',
+      options: [
+        { label: '文字だけ', val: 'no' },
+        { label: 'ロゴや絵も入れる', val: 'logo', hint: '画像はLINEで送ってください。画像を見てから金額をお知らせします' },
+      ],
+    },
+    {
       id: 'G5', round: '形', sum: '形', showIf: function (a) { return use(a) === 'date'; },
       title: '外側の形は？',
       options: [
@@ -156,16 +190,39 @@
       ],
     },
 
-    // ---- 大きさ ----
+    // ---- 印面の文字 ----
+    {
+      id: 'G12', round: '印面に入れる文字', sum: '文字の伝え方',
+      title: 'ハンコに入れる文字はどう伝えますか？',
+      options: [
+        { label: 'ここで入力する', val: 'type', hint: '1〜2分で終わります' },
+        { label: '名刺や今のハンコの写真をLINEで送る', val: 'photo', hint: '入力はしなくて大丈夫です' },
+      ],
+    },
+    {
+      id: 'G13', round: '印面に入れる文字', sum: '印面の文字', type: 'fields', showIf: isTyped,
+      title: 'ハンコに入れる文字を入れてください',
+      note: '入れたい文字だけで大丈夫です。並び順や改行は、お店で見やすく整えます。',
+      fields: function (a) { return FIELDS[use(a)] || FIELDS.other; },
+      needAny: function (a) { return NEED[use(a)] || NEED.other; },
+      needHint: '少なくとも1つ入れてください（写真で送る場合は「戻る」で選び直せます）',
+    },
+    {
+      id: 'G14', round: '印面に入れる文字', sum: '書き方', showIf: function (a) { return use(a) === 'addr'; },
+      title: '横書き・縦書きは？',
+      options: [{ label: '横書き' }, { label: '縦書き' }, { label: 'おまかせ' }],
+    },
+
+    // ---- 大きさ（文字を聞いたあと）----
     {
       id: 'G6', round: '大きさ', sum: '大きさ',
       showIf: function (a) { return use(a) === 'addr' && form(a) !== 'kumi'; },
       title: '大きさは？',
       note: '迷ったら「標準」がおすすめです。',
       options: [
-        { label: '小さめ（2行くらい・約50×15mm）', val: 0, hint: sizeHint('addr', 0) },
-        { label: '標準（3行くらい・約60×20mm）', val: 1, hint: function (a) { return '封筒・請求書でいちばん多い大きさ／' + sizeHint('addr', 1)(a); } },
-        { label: '大きめ（4〜5行・約70×30mm）', val: 2, hint: sizeHint('addr', 2) },
+        { label: '小さめ（2行くらい・約50×15mm）', val: 0, hint: addrSizeHint(0) },
+        { label: '標準（3行くらい・約60×20mm）', val: 1, hint: addrSizeHint(1, '封筒・請求書でいちばん多い大きさ') },
+        { label: '大きめ（4〜5行・約70×30mm）', val: 2, hint: addrSizeHint(2) },
         { label: '分からない', val: 1, hint: '標準の大きさでご提案します' },
       ],
     },
@@ -215,28 +272,6 @@
       ],
     },
 
-    // ---- 印面の文字 ----
-    {
-      id: 'G12', round: '印面に入れる文字', sum: '文字の伝え方',
-      title: 'ハンコに入れる文字はどう伝えますか？',
-      options: [
-        { label: 'ここで入力する', val: 'type', hint: '1〜2分で終わります' },
-        { label: '名刺や今のハンコの写真をLINEで送る', val: 'photo', hint: '入力はしなくて大丈夫です' },
-      ],
-    },
-    {
-      id: 'G13', round: '印面に入れる文字', sum: '印面の文字', type: 'fields', showIf: isTyped,
-      title: 'ハンコに入れる文字を入れてください',
-      note: '入れたい文字だけで大丈夫です。並び順や改行は、お店で見やすく整えます。',
-      fields: function (a) { return FIELDS[use(a)] || FIELDS.other; },
-      needAny: function (a) { return NEED[use(a)] || NEED.other; },
-      needHint: '少なくとも1つ入れてください（写真で送る場合は「戻る」で選び直せます）',
-    },
-    {
-      id: 'G14', round: '印面に入れる文字', sum: '書き方', showIf: function (a) { return use(a) === 'addr'; },
-      title: '横書き・縦書きは？',
-      options: [{ label: '横書き' }, { label: '縦書き' }, { label: 'おまかせ' }],
-    },
     {
       id: 'G15', round: '仕様', sum: '書体', showIf: function (a) { return use(a) !== 'date'; },
       title: '書体はどれがよいですか？',
@@ -252,31 +287,58 @@
 
     // ---- 個数・納期・ご意向 ----
     {
-      id: 'G16', round: '仕様', sum: '個数', type: 'text',
-      title: '必要な個数',
-      placeholder: '例）1',
-      inputmode: 'numeric',
+      id: 'G16', round: '仕様', sum: '個数',
+      title: '何個作りますか？',
+      options: [
+        { label: '1個', val: 1 }, { label: '2個', val: 2 }, { label: '3個', val: 3 },
+        { label: '5個', val: 5 }, { label: '10個', val: 10 },
+        { label: 'それ以外の数', val: 0, hint: '数はLINEでお知らせください' },
+      ],
     },
     {
-      id: 'G17', round: '納期', sum: '納期', type: 'text', optional: true,
-      title: 'ご希望の納期（あれば）',
-      placeholder: '例）11/30まで／なるべく早く など',
+      id: 'G17', round: '納期', sum: '納期',
+      title: 'いつまでに必要ですか？',
+      note: '午前中のご注文で、翌日午後にお渡しできます（内容によって日数が変わるものは、お店からお知らせします）。',
+      options: [
+        { label: 'なるべく早く' },
+        { label: '今週中' },
+        { label: '来週以降でよい' },
+        { label: '決まった日までに必要', hint: '日にちはLINEでお知らせください' },
+      ],
     },
     {
       id: 'G18', round: 'ご意向', sum: 'ご意向',
       title: 'このあと、どうしたいですか？',
       options: [
-        { label: 'この内容で作ってほしい', val: 'order', hint: '金額が目安どおりなら、確認のあと制作に入ります' },
-        { label: 'まず正式な金額を知りたい', val: 'quote' },
-        { label: 'お店で相談したい', val: 'visit' },
+        { label: 'この内容で注文する', val: 'order', hint: function (a) {
+          return isFixed(a) ? 'この金額で、内容を確認してから作ります' : '金額をお知らせして、OKをいただいてから作ります';
+        } },
+        { label: '注文の前に、金額や内容を相談したい', val: 'quote' },
+        { label: 'お店で相談したい', val: 'visit', hint: '郡山駅前のお店でご相談いただけます' },
       ],
     },
   ];
 
-  function qty(a) {
-    var s = String(a.G16 || '1').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
-    var n = parseInt(s.replace(/[^0-9]/g, ''), 10);
-    return n > 0 ? n : 1;
+  function qty(a) { return a.G16 && a.G16.val > 0 ? a.G16.val : 0; } // 0＝それ以外の数（1個あたりで出す）
+
+  // 値段が1つに決まるか（A：2026-11-18 社長OK）。おまかせ・大きさ分からない・ロゴ入り・数未定・幅のある値段は「目安」のまま
+  function isFixed(a) {
+    var u = use(a); if (!u || u === 'other') return false;
+    var f = form(a), item = P[u][f]; if (!item) return false;
+    var formQ = { addr: 'G2', name: 'G3', kaku: 'G4' }[u];
+    if (formQ && a[formQ] && a[formQ].val === 'omakase') return false;
+    var sizeQ = u === 'addr' ? 'G6' : u === 'kaku' ? 'G7' : u === 'date' ? 'G8' : null;
+    if (sizeQ && !(u === 'addr' && f === 'kumi') && (!a[sizeQ] || a[sizeQ].label === '分からない')) return false;
+    if (hasLogo(a) || !qty(a)) return false;
+    var r = unitOf(a);
+    return r[0] === r[1];
+  }
+  function unitOf(a) {
+    var u = use(a), f = form(a), item = P[u][f], i = sizeIdx(a);
+    var oil = hasGum(a) && a.G11 && a.G11.val === 'oil';
+    var unit = rng(item.red[i] != null ? item.red[i] : item.red[0]);
+    if (oil) unit = item.oil ? rng(item.oil[i]) : [unit[0] * 2, unit[1] * 2];
+    return unit;
   }
 
   function estimate(a, visible) {
@@ -286,11 +348,9 @@
     }
     var f = form(a), item = P[u][f];
     if (!item) return null;
-    var i = sizeIdx(a);
     var oil = visible('G11') && a.G11 && a.G11.val === 'oil';
-    var unit = rng(item.red[i] != null ? item.red[i] : item.red[0]);
-    if (oil) unit = item.oil ? rng(item.oil[i]) : [unit[0] * 2, unit[1] * 2];
-    var n = qty(a);
+    var unit = unitOf(a);
+    var n = qty(a), fixed = isFixed(a);
     var formQ = { addr: 'G2', name: 'G3', kaku: 'G4' }[u];
     var parts = [item.name + (formQ && a[formQ] && a[formQ].val === 'omakase' ? '（おまかせの例）' : '')];
     var sizeQ = u === 'addr' ? 'G6' : u === 'kaku' ? 'G7' : u === 'date' ? 'G8' : null;
@@ -299,11 +359,19 @@
       parts.push(sl === '分からない' ? (u === 'addr' ? '標準の大きさで計算' : '中くらいで計算') : sl);
     }
     if (visible('G11')) parts.push(oil ? '耐油ゴム' : '赤ゴム');
-    var total = unit[0] === unit[1] ? yen(unit[0] * n) : yen(unit[0] * n) + '〜' + yen(unit[1] * n);
+    if (hasLogo(a)) parts.push('ロゴ・絵入り');
+    var m = n || 1;
+    var total = unit[0] === unit[1] ? yen(unit[0] * m) : yen(unit[0] * m) + '〜' + yen(unit[1] * m);
+    var lines = [parts.join('・') + '：' + rngText(unit) + (n ? ' × ' + n + '個' : '（1個あたり）')];
+    if (hasLogo(a)) lines.push('ロゴや絵は、画像を見てから正式な金額をお知らせします');
     return {
-      total: total + '（税込）',
-      lines: [parts.join('・') + '：' + rngText(unit) + ' × ' + n + '個'],
-      note: '目安です。文字の量・大きさ・持ち手の変更などで変わることがあります。正式な金額は内容を確認してお店からお知らせします。',
+      label: fixed ? 'お値段' : '目安の金額',
+      fixed: fixed,
+      total: total + (n ? '' : '（1個あたり）') + '（税込）',
+      lines: lines,
+      note: fixed
+        ? 'この金額で承ります。文字の量が多く大きさを変える必要があるときだけ、作る前にご連絡します。'
+        : '目安です。文字の量・大きさ・持ち手の変更などで変わることがあります。正式な金額は内容を確認してお店からお知らせします。',
     };
   }
 
@@ -315,14 +383,20 @@
     afterNotes: function (a) {
       var n = [];
       if (a.G12 && a.G12.val === 'photo') n.push('送ったあと、続けてLINEのトークに名刺や今のハンコの写真を送ってください。写真が届いたら印面をお作りします。');
-      if (use(a) === 'kaku' || use(a) === 'other') n.push('ロゴや絵を入れる場合は、その画像もLINEで送ってください。');
+      if (hasLogo(a)) n.push('続けてLINEのトークに、ロゴや絵の画像を送ってください。');
+      else if (use(a) === 'other') n.push('ロゴや絵を入れる場合は、その画像もLINEで送ってください。');
+      if (a.G16 && a.G16.val === 0) n.push('作る数をLINEでお知らせください。');
+      if (a.G17 && a.G17.label === '決まった日までに必要') n.push('必要な日にちをLINEでお知らせください。');
+      if (a.G18 && a.G18.val === 'visit') n.push('お店：〒963-8001 福島県郡山市大町1-3-17／9:00〜19:00（水・土は17:00まで）日祝休／TEL 024-925-6861');
       return n;
     },
-    flow: [
-      '下の「LINEで送る」で、この内容をお店に送る',
-      'お店から正式な金額と納期をご連絡します',
-      'OKをいただいたら制作に入ります',
-      'できあがったら、お店でお受け取りください',
-    ],
+    flow: function (a) {
+      return [
+        '「LINEで送る」を押して、LINEで送信する',
+        isFixed(a) ? 'お店から内容の確認と納期をご連絡します' : 'お店から正式な金額と納期をご連絡します',
+        'OKをいただいたら制作に入ります',
+        'できあがったら、お店でお受け取りください',
+      ];
+    },
   };
 })();
