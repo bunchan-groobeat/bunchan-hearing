@@ -118,7 +118,7 @@
     {
       id: 'I12', round: 'ご希望', sum: '書体',
       title: '書体',
-      note: '実印・銀行印は、偽造されにくい篆書・印相体がおすすめです。（3点セットは3本共通で1回選択）',
+      note: function (a) { return '実印・銀行印は、偽造されにくい篆書・印相体がおすすめです。' + (isSet(a) ? '（3点セットは3本共通で1回選択）' : ''); },
       options: [
         { label: '篆書（てんしょ）' },
         { label: '印相体（吉相体）' },
@@ -131,7 +131,8 @@
     {
       id: 'I13', round: 'ご希望', sum: '材質', showIf: function (a) { return !isLacto(a); },
       title: '材質',
-      note: '3点セットは3本共通で1回選択（変えたい場合は最後の連絡先欄で一言添えてください）。',
+      // 2026-11-18 社長「紛らわしいから消して」→ 3点セットを選んだ人にだけ出す
+      note: function (a) { return isSet(a) ? '3点セットは3本共通で1回選択（変えたい場合は最後の連絡先欄で一言添えてください）。' : ''; },
       options: [
         { label: '薩摩本柘植（さつまほんつげ）', val: 'satsuma', hint: matHint('satsuma') },
         { label: 'アグニ', val: 'agni', hint: matHint('agni') },

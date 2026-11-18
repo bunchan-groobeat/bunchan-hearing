@@ -427,7 +427,7 @@
       qc.appendChild(qbar(q));
       qc.appendChild(el('div', 'q__eyebrow', roundLabel(q.round)));
       qc.appendChild(el('h2', 'q__title', q.title));
-      if (q.note) qc.appendChild(el('p', 'q__note', q.note));
+      var qn = typeof q.note === 'function' ? q.note(state.answers) : q.note; if (qn) qc.appendChild(el('p', 'q__note', qn));
 
       var opts = el('div', 'opts');
       q.options.forEach(function (opt, oi) {
@@ -562,7 +562,7 @@
       qc.appendChild(qbar(q));
       qc.appendChild(el('div', 'q__eyebrow', roundLabel(q.round)));
       qc.appendChild(el('h2', 'q__title', q.title));
-      if (q.note) qc.appendChild(el('p', 'q__note', q.note));
+      var qn = typeof q.note === 'function' ? q.note(state.answers) : q.note; if (qn) qc.appendChild(el('p', 'q__note', qn));
       var field = el('div', 'field');
       var input = document.createElement(q.multiline ? 'textarea' : 'input');
       if (!q.multiline) input.type = 'text';
@@ -593,7 +593,7 @@
       qc.appendChild(qbar(q));
       qc.appendChild(el('div', 'q__eyebrow', roundLabel(q.round)));
       qc.appendChild(el('h2', 'q__title', q.title));
-      if (q.note) qc.appendChild(el('p', 'q__note', q.note));
+      var qn = typeof q.note === 'function' ? q.note(state.answers) : q.note; if (qn) qc.appendChild(el('p', 'q__note', qn));
       var prev = state.answers[q.id] || {};
       var fields = typeof q.fields === 'function' ? q.fields(state.answers) : q.fields;
       var need = (typeof q.needAny === 'function' ? q.needAny(state.answers) : q.needAny) || [];
