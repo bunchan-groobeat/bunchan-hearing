@@ -41,8 +41,19 @@
         { label: '名前のみ' },
       ],
     },
+    // 認印はラクトのお値段を出す（2026-11-18 社長「10ミリ600円・12ミリ1,100円 税別」）
     {
-      id: 'I5', round: '個人印', sum: 'サイズ', showIf: isP,
+      id: 'I5L', round: '個人印', sum: '材質・サイズ', showIf: isMitome,
+      title: '認印はラクト（認印用の素材）がおすすめです',
+      note: 'お値段は税別です。',
+      options: [
+        { label: 'ラクト 10mm　600円', val: 'l10' },
+        { label: 'ラクト 12mm　1,100円', val: 'l12' },
+        { label: 'ほかの材質・サイズにしたい', val: 'other' },
+      ],
+    },
+    {
+      id: 'I5', round: '個人印', sum: 'サイズ', showIf: function (a) { return isP(a) && !isLacto(a); },
       title: 'サイズ',
       note: '実印は15mm以上が一般的です。',
       options: [
@@ -111,7 +122,7 @@
       ],
     },
     {
-      id: 'I13', round: 'ご希望', sum: '材質',
+      id: 'I13', round: 'ご希望', sum: '材質', showIf: function (a) { return !isLacto(a); },
       title: '材質',
       note: '3点セットは3本共通で1回選択（変えたい場合は最後の連絡先欄で一言添えてください）。',
       options: [
@@ -166,7 +177,7 @@
       // ★本番文面（2026-07-20 社長確定）。
       body: [
         'このフォームの送信はご注文の確定ではありません。内容を確認のうえ、お店からご連絡いたします。',
-        'このシートでは金額は表示されません。サイトに載っている価格は目安で、お見積りは内容を確認してからお出しします。',
+        'ラクトの認印は、このシートでお値段をお出しします。それ以外の印鑑は、内容を確認してからお見積りをお出しします（サイトに載っている価格は目安です）。',
         'いただいた内容を、ご相談の目的以外に使うことはありません。',
       ],
       checkLabel: '上記を確認しました',
@@ -177,10 +188,29 @@
   function isC(a) { return a.I1 && a.I1.val === 'corp'; }
   function isSet(a) { return isC(a) && a.I6 && a.I6.val === 'set'; }
   function isCorpSingle(a) { return isC(a) && a.I6 && a.I6.val !== 'set'; }
+  function isMitome(a) { return isP(a) && a.I2 && a.I2.label.indexOf('認印') === 0; }
+  function isLacto(a) { return isMitome(a) && a.I5L && (a.I5L.val === 'l10' || a.I5L.val === 'l12'); }
+
+  // ラクトの認印だけお値段を出す。それ以外は null（金額の欄を出さない）
+  var LACTO = { l10: { size: '10mm', yen: 600 }, l12: { size: '12mm', yen: 1100 } };
+  function estimate(a, visible) {
+    if (!visible('I5L') || !isLacto(a)) return null;
+    var p = LACTO[a.I5L.val];
+    var lines = ['認印・ラクト ' + p.size + '：' + p.yen.toLocaleString('ja-JP') + '円'];
+    if (visible('I14') && a.I14 && a.I14.label === 'つける') lines.push('印鑑ケースのお値段は別にお知らせします');
+    return {
+      label: 'お値段',
+      fixed: true,
+      total: p.yen.toLocaleString('ja-JP') + '円（税別）',
+      lines: lines,
+      note: 'この金額で承ります（印鑑本体のお値段です）。',
+    };
+  }
 
   window.HEARING_SETS = window.HEARING_SETS || {};
   window.HEARING_SETS['inkan'] = {
-    meta: { key: 'inkan', label: '印鑑', title: '印鑑ヒアリング' },
+    meta: { key: 'inkan', label: '印鑑', ver: 'v1.1', title: '印鑑ヒアリング' },
     questions: Q,
+    estimate: estimate,
   };
 })();
