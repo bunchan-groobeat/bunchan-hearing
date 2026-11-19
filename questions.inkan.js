@@ -55,7 +55,8 @@
     {
       id: 'I5', round: '個人印', sum: 'サイズ', showIf: function (a) { return isP(a) && !isLacto(a); },
       title: 'サイズ',
-      note: '実印は15mm以上が一般的です。',
+      note: '実印は15mm以上が一般的です。下の表（店頭のサイズ表）を参考にお選びください。',
+      img: 'img/inkan/size_kojin.webp', imgAlt: '個人印鑑サイズ表（実印・銀行印・認印の男性・女性別のおすすめサイズ）',
       options: [
         { label: '10.5mm' },
         { label: '12.0mm' },
@@ -118,14 +119,13 @@
     {
       id: 'I12', round: 'ご希望', sum: '書体',
       title: '書体',
-      note: function (a) { return '実印・銀行印は、偽造されにくい篆書・印相体がおすすめです。' + (isSet(a) ? '（3点セットは3本共通で1回選択）' : ''); },
+      note: function (a) { return '見本はお店で彫った印面です。実印・銀行印は、偽造されにくい篆書・印相体がおすすめです。' + (isSet(a) ? '（3点セットは3本共通で1回選択）' : ''); },
       options: [
-        { label: '篆書（てんしょ）' },
-        { label: '印相体（吉相体）' },
-        { label: '古印体' },
-        { label: '隷書' },
-        { label: '楷書' },
-        { label: '行書' },
+        { label: '篆書（てんしょ）', img: 'img/inkan/font_tensho.webp' },
+        { label: '印相体（吉相体）', img: 'img/inkan/font_insou.webp' },
+        { label: '古印体', img: 'img/inkan/font_koin.webp' },
+        { label: '隷書', img: 'img/inkan/font_reisho.webp' },
+        { label: '行書', img: 'img/inkan/font_gyosho.webp' },
       ],
     },
     {
@@ -134,15 +134,15 @@
       // 2026-11-18 社長「紛らわしいから消して」→ 3点セットを選んだ人にだけ出す
       note: function (a) { return isSet(a) ? '3点セットは3本共通で1回選択（変えたい場合は最後の連絡先欄で一言添えてください）。' : ''; },
       options: [
-        { label: '薩摩本柘植（さつまほんつげ）', val: 'satsuma', hint: matHint('satsuma') },
-        { label: 'アグニ', val: 'agni', hint: matHint('agni') },
-        { label: 'アグニブラック', val: 'agnib', hint: matHint('agnib') },
-        { label: '黒水牛', val: 'kuro', hint: matHint('kuro') },
-        { label: '天然黒水牛', val: 'tennen', hint: matHint('tennen') },
-        { label: '牛角（色）', val: 'gyuiro', hint: matHint('gyuiro') },
-        { label: '牛角（白）', val: 'gyushiro', hint: matHint('gyushiro') },
-        { label: 'チタン', val: 'titan', hint: matHint('titan') },
-        { label: '象牙', val: 'zouge', hint: matHint('zouge') },
+        { label: '薩摩本柘植（さつまほんつげ）', val: 'satsuma', hint: matHint('satsuma'), img: 'img/inkan/mat_satsuma.webp' },
+        { label: 'アグニ', val: 'agni', hint: matHint('agni'), img: 'img/inkan/mat_agni.webp' },
+        { label: 'アグニブラック', val: 'agnib', hint: matHint('agnib'), img: 'img/inkan/mat_agnib.webp' },
+        { label: '黒水牛', val: 'kuro', hint: matHint('kuro'), img: 'img/inkan/mat_kuro.webp' },
+        { label: '天然黒水牛', val: 'tennen', hint: matHint('tennen'), img: 'img/inkan/mat_tennen.webp' },
+        { label: '牛角（色）', val: 'gyuiro', hint: matHint('gyuiro'), img: 'img/inkan/mat_gyuiro.webp' },
+        { label: '牛角（白）', val: 'gyushiro', hint: matHint('gyushiro'), img: 'img/inkan/mat_gyushiro.webp' },
+        { label: 'チタン', val: 'titan', hint: matHint('titan'), img: null },
+        { label: '象牙', val: 'zouge', hint: matHint('zouge'), img: null },
       ],
     },
     {
@@ -278,7 +278,7 @@
 
   window.HEARING_SETS = window.HEARING_SETS || {};
   window.HEARING_SETS['inkan'] = {
-    meta: { key: 'inkan', label: '印鑑', ver: 'v1.2', title: '印鑑ヒアリング' },
+    meta: { key: 'inkan', label: '印鑑', ver: 'v1.3', title: '印鑑ヒアリング' },
     questions: Q,
     estimate: estimate,
   };

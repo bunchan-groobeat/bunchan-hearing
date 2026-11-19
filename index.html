@@ -138,6 +138,9 @@
     background: var(--primary); color: #fff;
   }
   .opt__label { flex: 1; font-size: 15.5px; font-weight: 600; }
+  .q__img { display: block; width: 100%; height: auto; margin: 10px 0 2px; border-radius: 8px; border: 1px solid var(--line); }
+  .opt__img { flex-shrink: 0; width: 72px; height: 72px; border-radius: 10px; object-fit: cover; background: #fff; border: 1px solid var(--line); }
+  .opt__img--none { display: grid; place-items: center; white-space: pre-line; text-align: center; font-size: 11px; line-height: 1.4; color: var(--muted); background: #f5f2f0; }
   .opt__check {
     width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line);
     flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: 14px;
@@ -256,7 +259,7 @@
   <!-- 設定値と質問セットは外部ファイルで分離（横展開＝差し替えのため）。外部読込はGA4の計測タグだけ（config.js の ga4 が空なら読まない） -->
   <script src="config.js"></script>
   <!-- 種目別 質問セット（はんこ屋ぶんちゃんの8品目）-->
-  <script src="questions.inkan.js"></script>
+  <script src="questions.inkan.js?v=20261119"></script>
   <script src="questions.gomuin.js"></script>
   <script src="questions.meishi.js"></script>
   <script src="questions.sticker.js"></script>
@@ -428,12 +431,24 @@
       qc.appendChild(el('div', 'q__eyebrow', roundLabel(q.round)));
       qc.appendChild(el('h2', 'q__title', q.title));
       var qn = typeof q.note === 'function' ? q.note(state.answers) : q.note; if (qn) qc.appendChild(el('p', 'q__note', qn));
+      if (q.img) {
+        var qi = document.createElement('img');
+        qi.className = 'q__img'; qi.src = q.img; qi.alt = q.imgAlt || ''; qi.width = 1000; qi.height = 512;
+        qc.appendChild(qi);
+      }
 
       var opts = el('div', 'opts');
       q.options.forEach(function (opt, oi) {
         var b = document.createElement('button');
         b.className = 'opt'; b.type = 'button';
         b.appendChild(el('span', 'opt__num', String(oi + 1)));
+        if (opt.img) {
+          var im = document.createElement('img');
+          im.className = 'opt__img'; im.src = opt.img; im.alt = ''; im.width = 72; im.height = 72; im.loading = 'lazy';
+          b.appendChild(im);
+        } else if (opt.img === null) {
+          b.appendChild(el('span', 'opt__img opt__img--none', '写真\n準備中'));
+        }
         var lab = el('span', 'opt__label');
         lab.appendChild(document.createTextNode(opt.label));
         var hint = typeof opt.hint === 'function' ? opt.hint(state.answers) : opt.hint;
