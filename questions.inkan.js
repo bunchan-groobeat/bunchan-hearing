@@ -30,11 +30,6 @@
       ],
     },
     {
-      id: 'I3', round: '個人印', sum: '彫刻する名前', type: 'text', showIf: isP,
-      title: '彫刻するお名前',
-      placeholder: '例）山田太郎',
-    },
-    {
       id: 'I4', round: '個人印', sum: '彫り方', showIf: isP,
       title: '彫り方',
       options: [
@@ -42,6 +37,12 @@
         { label: '名字のみ' },
         { label: '名前のみ' },
       ],
+    },
+    {
+      // 2026-11-19 社長「名字か名前かフルネームか選んでから打ち込むようにして」＝彫り方（I4）を先に聞く
+      id: 'I3', round: '個人印', sum: '彫刻する名前', type: 'text', showIf: isP,
+      title: function (a) { var k = a.I4 && a.I4.label; return k === '名字のみ' ? '彫刻する名字' : k === '名前のみ' ? '彫刻する名前（下の名前）' : '彫刻するお名前（フルネーム）'; },
+      placeholder: function (a) { var k = a.I4 && a.I4.label; return k === '名字のみ' ? '例）山田' : k === '名前のみ' ? '例）太郎' : '例）山田太郎'; },
     },
     // 認印はラクトのお値段を出す（2026-11-18 社長「10ミリ600円・12ミリ1,100円 税別」）
     {
@@ -124,11 +125,11 @@
       title: '書体',
       note: function (a) { return '見本はお店で彫った印面です。実印・銀行印は、偽造されにくい篆書・印相体がおすすめです。' + (isSet(a) ? '（3点セットは3本共通で1回選択）' : ''); },
       options: [
-        { label: '篆書（てんしょ）', img: 'img/inkan/font_tensho.webp' },
-        { label: '印相体（吉相体）', img: 'img/inkan/font_insou.webp' },
-        { label: '古印体', img: 'img/inkan/font_koin.webp' },
-        { label: '隷書', img: 'img/inkan/font_reisho.webp' },
-        { label: '行書', img: 'img/inkan/font_gyosho.webp' },
+        { label: '篆書（てんしょ）', img: fontImg('tensho') },
+        { label: '印相体（吉相体）', img: fontImg('insou') },
+        { label: '古印体', img: fontImg('koin') },
+        { label: '隷書', img: fontImg('reisho') },
+        { label: '行書', img: fontImg('gyosho') },
       ],
     },
     {
@@ -201,6 +202,9 @@
   function isCorpSingle(a) { return isC(a) && a.I6 && a.I6.val !== 'set'; }
   function isFull(a) { return isP(a) && a.I4 && a.I4.label === 'フルネーム'; }
   function notFull(a) { return !isFull(a); }
+  // 書体の見本：個人印でフルネーム以外は「國分」だけの印面（2026-11-19 社長「フルネーム以外は【國分】だけのサンプル」）。フルネームは「國分雄太」
+  //   法人は見本を出さない（2026-11-19 社長「法人サンプルは一旦外して」＝個人の名前の印面しか無いため）
+  function fontImg(k) { return function (a) { if (!isP(a)) return undefined; return 'img/inkan/font_' + k + (a.I4 && !isFull(a) ? '_sei' : '') + '.webp'; }; }
   function isMitome(a) { return isP(a) && a.I2 && a.I2.label.indexOf('認印') === 0; }
   function isLacto(a) { return isMitome(a) && a.I5L && (a.I5L.val === 'l10' || a.I5L.val === 'l12'); }
 
@@ -283,7 +287,7 @@
 
   window.HEARING_SETS = window.HEARING_SETS || {};
   window.HEARING_SETS['inkan'] = {
-    meta: { key: 'inkan', label: '印鑑', ver: 'v1.4', title: '印鑑ヒアリング' },
+    meta: { key: 'inkan', label: '印鑑', ver: 'v1.6', title: '印鑑ヒアリング' },
     questions: Q,
     estimate: estimate,
   };
