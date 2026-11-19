@@ -140,6 +140,7 @@
   .opt__label { flex: 1; font-size: 15.5px; font-weight: 600; }
   .q__img { display: block; width: 100%; height: auto; margin: 10px 0 2px; border-radius: 8px; border: 1px solid var(--line); }
   .opt__img { flex-shrink: 0; width: 72px; height: 72px; border-radius: 10px; object-fit: cover; background: #fff; border: 1px solid var(--line); }
+  .opt__imgw { display: block; width: 100%; max-width: 320px; height: auto; margin-top: 8px; border-radius: 6px; border: 1px solid var(--line); background: #fff; }
   .opt__img--none { display: grid; place-items: center; white-space: pre-line; text-align: center; font-size: 11px; line-height: 1.4; color: var(--muted); background: #f5f2f0; }
   .opt__check {
     width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line);
@@ -260,7 +261,7 @@
   <script src="config.js"></script>
   <!-- 種目別 質問セット（はんこ屋ぶんちゃんの8品目）-->
   <script src="questions.inkan.js?v=20261119"></script>
-  <script src="questions.gomuin.js"></script>
+  <script src="questions.gomuin.js?v=20261119"></script>
   <script src="questions.meishi.js"></script>
   <script src="questions.sticker.js"></script>
   <script src="questions.flyer.js"></script>
@@ -453,6 +454,11 @@
         lab.appendChild(document.createTextNode(opt.label));
         var hint = typeof opt.hint === 'function' ? opt.hint(state.answers) : opt.hint;
         if (hint) lab.appendChild(el('span', 'opt__hint', hint));
+        if (opt.imgWide) { // 横長の見本（ゴム印の書体）はラベルの下に幅いっぱいで
+          var iw = document.createElement('img');
+          iw.className = 'opt__imgw'; iw.src = opt.imgWide; iw.alt = opt.label + 'の見本'; iw.width = 600; iw.height = 208; iw.loading = 'lazy';
+          lab.appendChild(iw);
+        }
         if (opt.quote) {
           var badge = el('span', 'quote-badge', '※別途お見積り');
           lab.appendChild(badge);

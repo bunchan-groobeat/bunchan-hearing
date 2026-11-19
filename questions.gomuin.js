@@ -284,13 +284,18 @@
     {
       id: 'G15', round: '仕様', sum: '書体', showIf: function (a) { return use(a) !== 'date'; },
       title: '書体はどれがよいですか？',
+      // 2026-11-19 社長「印鑑のヒアリングみたいにして」→ 店の「ゴム印書体紹介」（NET用商材/NETゴム印書体.jpg）の8書体と印面見本に揃える
+      note: '見本はお店のゴム印の印面（住所印の例）です。',
       options: [
         { label: 'おまかせ', hint: '使い道に合わせてお店が選びます' },
-        { label: 'ゴシック', hint: 'はっきり読みやすい' },
-        { label: '明朝', hint: 'きちんとした印象' },
-        { label: '楷書', hint: '手書きのような和の印象' },
-        { label: '丸ゴシック', hint: 'やわらかい印象' },
-        { label: '行書' }, { label: '隷書' }, { label: '古印体' },
+        { label: 'ゴシック体', hint: 'はっきり読みやすい', imgWide: 'img/gomuin/font_gothic.webp' },
+        { label: '明朝体', hint: 'きちんとした印象', imgWide: 'img/gomuin/font_mincho.webp' },
+        { label: '丸ゴシック体', hint: 'やわらかい印象', imgWide: 'img/gomuin/font_marugo.webp' },
+        { label: '古印体', imgWide: 'img/gomuin/font_koin.webp' },
+        { label: '楷書体', hint: '手書きのような和の印象', imgWide: 'img/gomuin/font_kaisho.webp' },
+        { label: 'まるもじ体', imgWide: 'img/gomuin/font_marumoji.webp' },
+        { label: '行書体', imgWide: 'img/gomuin/font_gyosho.webp' },
+        { label: 'ハイカラPOP体', imgWide: 'img/gomuin/font_popn.webp' },
       ],
     },
 
@@ -386,7 +391,7 @@
 
   window.HEARING_SETS = window.HEARING_SETS || {};
   window.HEARING_SETS['gomuin'] = {
-    meta: { key: 'gomuin', label: 'ゴム印', ver: 'v2', title: 'ゴム印ヒアリング' },
+    meta: { key: 'gomuin', label: 'ゴム印', ver: 'v2.2', title: 'ゴム印ヒアリング' },
     questions: Q,
     estimate: estimate,
     afterNotes: function (a) {
