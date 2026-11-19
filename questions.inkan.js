@@ -21,6 +21,8 @@
     {
       id: 'I2', round: '個人印', sum: '種類', showIf: isP,
       title: '種類はどれですか？',
+      // 2026-11-19 社長「この時点でサイズの画像だして」＝種類を選ぶ前にサイズ表を見せる（I5 でも出す）
+      img: 'img/inkan/size_kojin.webp', imgAlt: '個人印鑑サイズ表（実印・銀行印・認印の男性・女性別のおすすめサイズ）',
       options: [
         { label: '実印（役所に登録する印）' },
         { label: '銀行印' },
@@ -43,7 +45,7 @@
     },
     // 認印はラクトのお値段を出す（2026-11-18 社長「10ミリ600円・12ミリ1,100円 税別」）
     {
-      id: 'I5L', round: '個人印', sum: '材質・サイズ', showIf: isMitome,
+      id: 'I5L', round: '個人印', sum: '材質・サイズ', showIf: function (a) { return isMitome(a) && !isFull(a); }, // フルネームは15mm以上＝ラクト10/12mmは出さない
       title: '認印はラクト（認印用の素材）がおすすめです',
       note: 'お値段は税別です。',
       options: [
@@ -55,12 +57,13 @@
     {
       id: 'I5', round: '個人印', sum: 'サイズ', showIf: function (a) { return isP(a) && !isLacto(a); },
       title: 'サイズ',
-      note: '実印は15mm以上が一般的です。下の表（店頭のサイズ表）を参考にお選びください。',
+      note: function (a) { return isFull(a) ? 'フルネームは15mm以上になります。下の表（店頭のサイズ表）を参考にお選びください。' : '実印は15mm以上が一般的です。下の表（店頭のサイズ表）を参考にお選びください。'; },
       img: 'img/inkan/size_kojin.webp', imgAlt: '個人印鑑サイズ表（実印・銀行印・認印の男性・女性別のおすすめサイズ）',
       options: [
-        { label: '10.5mm' },
-        { label: '12.0mm' },
-        { label: '13.5mm' },
+        // 2026-11-19 社長「フルネームは15ミリ以上」
+        { label: '10.5mm', showIf: notFull },
+        { label: '12.0mm', showIf: notFull },
+        { label: '13.5mm', showIf: notFull },
         { label: '15.0mm' },
         { label: '16.5mm' },
         { label: '18.0mm' },
@@ -196,6 +199,8 @@
   function isC(a) { return a.I1 && a.I1.val === 'corp'; }
   function isSet(a) { return isC(a) && a.I6 && a.I6.val === 'set'; }
   function isCorpSingle(a) { return isC(a) && a.I6 && a.I6.val !== 'set'; }
+  function isFull(a) { return isP(a) && a.I4 && a.I4.label === 'フルネーム'; }
+  function notFull(a) { return !isFull(a); }
   function isMitome(a) { return isP(a) && a.I2 && a.I2.label.indexOf('認印') === 0; }
   function isLacto(a) { return isMitome(a) && a.I5L && (a.I5L.val === 'l10' || a.I5L.val === 'l12'); }
 
@@ -278,7 +283,7 @@
 
   window.HEARING_SETS = window.HEARING_SETS || {};
   window.HEARING_SETS['inkan'] = {
-    meta: { key: 'inkan', label: '印鑑', ver: 'v1.3', title: '印鑑ヒアリング' },
+    meta: { key: 'inkan', label: '印鑑', ver: 'v1.4', title: '印鑑ヒアリング' },
     questions: Q,
     estimate: estimate,
   };

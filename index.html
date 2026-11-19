@@ -121,7 +121,7 @@
   .q__note { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .opts { display: grid; gap: 11px; margin: 14px 0 8px; }
   .opt {
-    display: flex; align-items: center; gap: 14px; text-align: left;
+    display: flex; align-items: center; gap: 14px; text-align: left; color: var(--ink); /* iPhoneはbuttonの文字を青にする */
     background: var(--card); border: 1.5px solid var(--line); border-radius: 15px;
     padding: 15px 16px; min-height: var(--tap); cursor: pointer; font: inherit;
     transition: transform .1s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
@@ -260,8 +260,8 @@
   <!-- 設定値と質問セットは外部ファイルで分離（横展開＝差し替えのため）。外部読込はGA4の計測タグだけ（config.js の ga4 が空なら読まない） -->
   <script src="config.js"></script>
   <!-- 種目別 質問セット（はんこ屋ぶんちゃんの8品目）-->
-  <script src="questions.inkan.js?v=20261119"></script>
-  <script src="questions.gomuin.js?v=20261119"></script>
+  <script src="questions.inkan.js?v=20261119b"></script>
+  <script src="questions.gomuin.js?v=20261119b"></script>
   <script src="questions.meishi.js"></script>
   <script src="questions.sticker.js"></script>
   <script src="questions.flyer.js"></script>
@@ -439,10 +439,13 @@
       }
 
       var opts = el('div', 'opts');
+      var shown = 0;
       q.options.forEach(function (opt, oi) {
+        if (opt.showIf && !opt.showIf(state.answers)) return; // 選択肢ごとの出し分け（例：フルネームは15mm以上だけ）
+        shown++;
         var b = document.createElement('button');
         b.className = 'opt'; b.type = 'button';
-        b.appendChild(el('span', 'opt__num', String(oi + 1)));
+        b.appendChild(el('span', 'opt__num', String(shown)));
         if (opt.img) {
           var im = document.createElement('img');
           im.className = 'opt__img'; im.src = opt.img; im.alt = ''; im.width = 72; im.height = 72; im.loading = 'lazy';
